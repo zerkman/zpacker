@@ -1,4 +1,14 @@
-/* packer.c */
+/* -------------------------------------------------------------------
+ zpack - simple LZ77-based data compression
+ by Zerkman / Sector One
+------------------------------------------------------------------- */
+
+/* Copyright © 2020 François Galea <fgalea at free.fr>
+ * This program is free software. It comes without any warranty, to
+ * the extent permitted by applicable law. You can redistribute it
+ * and/or modify it under the terms of the Do What The Fuck You Want
+ * To Public License, Version 2, as published by Sam Hocevar. See
+ * the COPYING file or http://www.wtfpl.net/ for more details. */
 
 #include <stdio.h>
 #include <string.h>
