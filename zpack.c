@@ -3,11 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BITS_SIZE 2
-#define BITS_OFF (6-BITS_SIZE)
-#define MAX_SIZE (1<<BITS_SIZE)
-#define MIN_OFF (-(1<<BITS_OFF))
-
 static int count_similar(const unsigned char *p1, const unsigned char *p2,
                          const unsigned char *end) {
   int similar = 0;
@@ -20,7 +15,7 @@ static int count_similar(const unsigned char *p1, const unsigned char *p2,
 }
 
 #define flush_individual { \
-  *w++ = individual_count-1; \
+  *w++ = (individual_count-1) | 0xc0; \
   memcpy(w, individual, individual_count); \
   w += individual_count; \
   individual += individual_count; \
@@ -48,18 +43,15 @@ long pack(unsigned char *out, const unsigned char *in, long size) {
       /* copy */
       if (individual_count)
         flush_individual;
-      if (best_size > 67)
-        best_size = 67;
+      if (best_size > 0x7f+0x40+4)
+        best_size = 0x7f+0x40+4;
       individual += best_size;
       int offset = best_pos - r;
       r += best_size;
       best_size -= 4;
 
-      if (best_size < MAX_SIZE && offset >= MIN_OFF)
-        *w++ = 0x80 | (best_size&(MAX_SIZE-1))<<BITS_OFF
-            | (offset&((1<<BITS_OFF)-1));
-      else if (offset >= -256) {
-        *w++ = 0xC0 | best_size;
+      if (offset >= -256) {
+        *w++ = best_size;
         *w++ = offset;
       }
       else
@@ -68,7 +60,7 @@ long pack(unsigned char *out, const unsigned char *in, long size) {
     } else {
       /* individual bytes */
       individual_count ++;
-      if (individual_count == 128)
+      if (individual_count == 0x40)
         flush_individual;
       r ++;
     }
@@ -84,20 +76,14 @@ long unpack(unsigned char *out, const unsigned char *in, long size) {
   const unsigned char *end = in + size;
   while (r < end) {
     /* printf("%4x %4x\n", w-out, r-in); */
-    int size = (signed char)(*r++);
-    if (size >= 0) {
+    int size = (unsigned char)(*r++);
+    if ((size & 0xc0) == 0xc0) {
+      size &= 0x3f;
       while (size-- >= 0)
         *w ++ = *r ++;
     } else {
       int offset;
-      if ((size & 0xC0) == 0xC0) {
-        offset = -256 | (signed char)(*r++);
-        size &= 0x3F;
-      } else {
-        offset = size | (-1<<BITS_OFF);
-        size = (size>>BITS_OFF) & (MAX_SIZE-1);
-      }
-
+      offset = -256 | (signed char)(*r++);
       /* printf("size=%d offset=%d\n", size, offset); */
       size += 3;
       while (size-- >= 0) {
