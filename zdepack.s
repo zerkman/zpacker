@@ -19,10 +19,9 @@
 ; a1: end of unpacked data
 zdepack:
 next:
-	moveq	#0,d0
 	move.b	(a0)+,d0
 	moveq	#$ffffffc0,d1
-	eor	d0,d1
+	eor.b	d0,d1
 	lsr.b	#6,d1
 	bne.s	offset
 
@@ -33,10 +32,11 @@ rawlp:	move.b	(a0)+,(a1)+
 
 offset:	move.b	(a0)+,d1	; offset
 	lea	(a1,d1.w),a3
-	addq	#3,d0		; size
+	addq.b	#3,d0		; size
 
 offlp:	move.b	(a3)+,(a1)+
-	dbra	d0,offlp
+	subq.b	#1,d0
+	bcc.s	offlp
 
 test:	cmp.l	a2,a0
 	bne.s	next
