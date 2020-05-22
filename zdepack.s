@@ -31,10 +31,9 @@ rawlp:	move.b	(a0)+,(a1)+
 	bra.s	test
 
 offset:	move.b	(a0)+,d1	; offset
-	lea	(a1,d1.w),a3
 	addq.b	#3,d0		; size
 
-offlp:	move.b	(a3)+,(a1)+
+offlp:	move.b	(a1,d1.w),(a1)+
 	subq.b	#1,d0
 	bcc.s	offlp
 
