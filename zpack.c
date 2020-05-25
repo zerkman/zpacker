@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 static int count_similar(const unsigned char *p1, const unsigned char *p2,
                          const unsigned char *end) {
@@ -60,12 +61,9 @@ long pack(unsigned char *out, const unsigned char *in, long size) {
       r += best_size;
       best_size -= 4;
 
-      if (offset >= -256) {
-        *w++ = best_size;
-        *w++ = offset;
-      }
-      else
-        printf("problem: offset < -256 !!!\n");
+      assert(offset >= -256);
+      *w++ = best_size;
+      *w++ = offset;
       /* printf("size=%d offset=%d\n", best_size, offset); */
     } else {
       /* individual bytes */
