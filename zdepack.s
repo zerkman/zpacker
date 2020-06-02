@@ -25,9 +25,10 @@ next:
 	lsr.b	#6,d1
 	bne.s	offset
 
-raw:	and	#$3f,d0		; size
+raw:	lsl.b	#2,d0		; size in bits 7:2
 rawlp:	move.b	(a0)+,(a1)+
-	dbra	d0,rawlp
+	subq.b	#4,d0
+	bcc.s	rawlp
 	bra.s	test
 
 offset:	move.b	(a0)+,d1	; offset
