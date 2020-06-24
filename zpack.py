@@ -51,7 +51,7 @@ def pack(d):
         if firstpos != -1:
             while p < r:
                 size = 3
-                while d[p + size] == d[r + size]:
+                while r + size < len(d) and d[p + size] == d[r + size]:
                     size += 1
                 if size > best_size:
                     best_size = size
