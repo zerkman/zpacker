@@ -21,6 +21,7 @@
 # could probably be more pythonic.
 
 import sys
+import time
 
 
 def pack(d):
@@ -28,43 +29,44 @@ def pack(d):
     r = 0
     individual_count = 0
     individual = 0
-
-    def count_similar(l1, l2):
-        similar = 0
-        i = 0
-        while i < len(l2):
-            if l1[i] != l2[i]:
-                return similar
-            similar += 1
-            i += 1
-        return similar
-
+       
     def flush_individual():
         nonlocal d
         nonlocal individual
         nonlocal individual_count
+        if individual_count == 0:
+            return
         o.append((individual_count - 1) | 0xc0)
-        for x in range(individual_count):
-            o.append(d[individual])
-            individual += 1
+        o.extend(d[individual:individual + individual_count])
+        individual += individual_count
         individual_count = 0
 
     while r < len(d):
-        p = r - 1
-        best_size = 0
-        best_pos = p
-        while p > 0 and p >= (r - 255):
-            size = count_similar(d[p:], d[r:])
-            if size > best_size:
-                best_size = size
-                best_pos = p
-            p -= 1
+        p = max(r - 256, 0)
+        firstpos = d[p:].find(d[r:r + 4])
+        p += firstpos
+        best_size = 3
+        best_pos = 0
+        
+        if firstpos != -1:
+            while p < r:
+                size = 3
+                while d[p + size] == d[r + size]:
+                    size += 1
+                if size > best_size:
+                    best_size = size
+                    best_pos = p
+                    if best_size >= 0x7f + 0x40 + 4:
+                        break
+                nextpos = d[p + 1:].find(d[r:r + 4]) + 1
+                if nextpos == 0:
+                    break
+                p += nextpos
+
         if best_size > 3:
             # copy
-            if individual_count > 0:
-                flush_individual()
-            if best_size > 0x7f + 0x40 + 4:
-                best_size = 0x7f + 0x40 + 4
+            flush_individual()
+            best_size = min(best_size, 0x7f + 0x40 + 4)
             individual += best_size
             offset = best_pos - r
             r += best_size
@@ -81,8 +83,7 @@ def pack(d):
             if individual_count == 0x40:
                 flush_individual()
             r += 1
-    if individual_count > 0:
-        flush_individual()
+    flush_individual()
     return bytes(o)
 
 
@@ -122,11 +123,13 @@ def main():
     in_file = b''
     with open(sys.argv[1], 'rb') as f:
         in_file = f.read()
+    starttime = time.time()
     out_file = pack(in_file)
-    print(f"size={len(in_file)} packed={len(out_file)}\n")
+    endtime = time.time()
+    print(f"size={len(in_file)} packed={len(out_file)} time={(endtime-starttime):.2f}")
     buffer = unpack(out_file)
     if buffer != in_file:
-        print(f"Problem {len(in_file)} {len(buffer)}\n")
+        print(f"Problem {len(in_file)} {len(buffer)}")
         with open("out.upk", "wb") as f:
             f.write(buffer)
     else:
