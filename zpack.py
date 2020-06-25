@@ -43,26 +43,31 @@ def pack(d):
 
     while r < len(d):
         p = max(r - 256, 0)
-        firstpos = d[p:].find(d[r:r + 4])
-        p += firstpos
-        best_size = 3
+        known_good = 4
+        known_bad = min(0x7f + 0x40 + 4, len(d) - r)
+        v = known_good
+        res = d[p:r + v - 1].find(d[r:r + v])
+        best_size = 0
         best_pos = 0
         
-        if firstpos != -1:
-            while p < r:
-                size = 3
-                while r + size < len(d) and d[p + size] == d[r + size]:
-                    size += 1
-                if size > best_size:
-                    best_size = size
-                    best_pos = p
-                    if best_size >= 0x7f + 0x40 + 4:
-                        break
-                nextpos = d[p + 1:].find(d[r:r + 4]) + 1
-                if nextpos == 0:
-                    break
-                p += nextpos
-
+        if res != -1:
+            v = known_bad
+            res = d[p:r + v - 1].find(d[r:r + v])            
+            if res != -1:
+                best_size = v
+                best_pos = res + p
+            else:
+                while known_bad - known_good > 1:
+                    v = int((known_good + known_bad) / 2)
+                    res = d[p:r + v - 1].find(d[r:r + v])
+                    if res == -1:
+                        known_bad = v
+                    else:
+                        known_good = v
+                        best_size = known_good
+                        best_pos = res + p
+#                    print(f"{known_good} {known_bad} {v}")
+        
         if best_size > 3:
             # copy
             flush_individual()
@@ -71,8 +76,9 @@ def pack(d):
             offset = best_pos - r
             r += best_size
             best_size -= 4
+#            print(f"size={best_size} offset={offset}")
             assert offset >= -256
-#           print(f"size={best_size} offset={offset}")
+            assert offset < 0
             o.append(best_size)
             if offset < 0:
                 offset += 256
@@ -100,7 +106,7 @@ def unpack(d):
             if x > 127:
                 x -= 256
             offset = -256 | x
-#           print(f"size={size} offset={offset}")
+#            print(f"size={size} offset={offset}")
             size += 3
             while size >= 0:
                 o.append(o[len(o) + offset])
