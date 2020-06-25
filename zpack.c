@@ -10,9 +10,13 @@
  * To Public License, Version 2, as published by Sam Hocevar. See
  * the COPYING file or http://www.wtfpl.net/ for more details. */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <malloc.h>
 
 static int count_similar(const unsigned char *p1, const unsigned char *p2,
                          const unsigned char *end) {
@@ -39,17 +43,20 @@ long pack(unsigned char *out, const unsigned char *in, long size) {
   const unsigned char *individual = in;
   int individual_count = 0;
   while (r < end) {
-    const unsigned char *p = r-1;
-    int best_size = 0;
+    const unsigned char *p = r-256;
+    int best_size = 3;
     const unsigned char *best_pos = p;
-    while (p > in && p >= (r-255)) {
+    if (p < in)
+        p = in;
+    while (p < r - 1 && best_size < 0x7f + 0x40 + 4) {
       int size = count_similar(p, r, end);
       if (size > best_size) {
         best_size = size;
         best_pos = p;
       }
-      p --;
+      p ++;
     }
+
     if (best_size > 3) {
       /* copy */
       if (individual_count)
@@ -104,7 +111,7 @@ long unpack(unsigned char *out, const unsigned char *in, long size) {
 }
 
 int main(int argc, char **argv) {
-  FILE *fd = fopen(argv[1], "r");
+  FILE *fd = fopen(argv[1], "rb");
   if (!fd) {
     perror(argv[1]);
     return 1;
@@ -114,8 +121,8 @@ int main(int argc, char **argv) {
   long in_size = ftell(fd);
   fseek(fd, 0, SEEK_SET);
 
-  unsigned char in_file[in_size];
-  unsigned char out_file[in_size*2];
+  unsigned char *in_file = (unsigned char*)malloc(in_size);
+  unsigned char *out_file = (unsigned char*)malloc(in_size*2);
   fread(in_file, 1, in_size, fd);
   fclose(fd);
 
@@ -123,20 +130,23 @@ int main(int argc, char **argv) {
 
   printf("size=%ld packed=%ld\n", in_size, packed_size);
 
-  unsigned char buffer[in_size*2];
+  unsigned char *buffer = (unsigned char*)malloc(in_size*2);
   long unpacked_size = unpack(buffer, out_file, packed_size);
   if (memcmp(in_file, buffer, in_size)) {
     printf("Problem %ld %ld\n", in_size, unpacked_size);
-    fd = fopen("out.upk", "w");
+    fd = fopen("out.upk", "wb");
     fwrite(buffer, 1, unpacked_size, fd);
     fclose(fd);
   }
   else
     printf("Depack ok\n");
 
-  fd = fopen("out.pck", "w");
+  fd = fopen("out.pck", "wb");
   fwrite(out_file, 1, packed_size, fd);
   fclose(fd);
+  free(buffer);
+  free(out_file);
+  free(in_file);
 
   return 0;
 }
