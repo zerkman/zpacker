@@ -24,9 +24,9 @@ next:
 	cmp.b	d1,d0
 	bcs.s	offset
 
-raw:	lsl.b	#2,d0		; size in bits 7:2
+raw:	sub.b	d1,d0
 rawlp:	move.b	(a0)+,(a1)+
-	subq.b	#4,d0
+	subq.b	#1,d0
 	bcc.s	rawlp
 	bra.s	test
 
