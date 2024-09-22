@@ -1,6 +1,7 @@
 ;---------------------------------------------------------------------
 ;	zdepack
 ;	by zerkman / Sector One
+;	size optimisation by Ben / OVR
 ;---------------------------------------------------------------------
 
 ; Copyright (c) 2020-2023 Francois Galea <fgalea at free.fr>
@@ -12,7 +13,7 @@
 
 ; unpack data chunk
 ; parameters:
-; a0: beginning of packed data
+; a0: beginning of packed data
 ; a1: unpack buffer
 ; a2: end of packed data
 ; returned value:
@@ -36,7 +37,6 @@ rawlp:	move.b	(a0)+,(a1)+
 offset:
 	move.b	(a0)+,d1
 	addq.b	#3,d0
-	
 
 offlp:	move.b	(a1,d1.w),(a1)+
 	subq.b	#1,d0

@@ -47,7 +47,7 @@ static uint8_t * encode_back(uint8_t * out, int offset, int n)
   assert( offset >= -256 );
   assert( n >= 4 );
   assert( n <= 195 );
-  *out++ = n - 4;
+  *out++ = 195 - n;
   *out++ = offset;
   return out;
 }
@@ -116,7 +116,7 @@ long unpack(uint8_t *out, const uint8_t *in, long size) {
       int offset;
       offset = -256 | (signed char)(*r++);
       /* printf("size=%d offset=%d\n", size, offset); */
-      size += 4;
+      size = 195 - size;
       assert( size >= 4 );
       assert( size <= 195 );
       do {
