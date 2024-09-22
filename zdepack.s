@@ -21,9 +21,8 @@ zdepack:
 next:
 	move.b	(a0)+,d0
 	moveq	#$ffffffc0,d1
-	eor.b	d0,d1
-	lsr.b	#6,d1
-	bne.s	offset
+	cmp.b	d1,d0
+	bcs.s	offset
 
 raw:	lsl.b	#2,d0		; size in bits 7:2
 rawlp:	move.b	(a0)+,(a1)+
