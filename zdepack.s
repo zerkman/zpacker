@@ -17,21 +17,26 @@
 ; a2: end of packed data
 ; returned value:
 ; a1: end of unpacked data
-zdepack:
-next:
-	move.b	(a0)+,d0
-	moveq	#$ffffffc0,d1
-	cmp.b	d1,d0
-	bcs.s	offset
 
-raw:	sub.b	d1,d0
+zdepack:
+	moveq	#-1,d1
+next:
+	moveq.l	#191,d0
+	sub.b	(a0)+,d0
+	bcc.s	offset
+
+	;; d0 => -1 .. -64
+raw:
 rawlp:	move.b	(a0)+,(a1)+
-	subq.b	#1,d0
-	bcc.s	rawlp
+	addq.b	#1,d0
+	bne.s	rawlp
 	bra.s	test
 
-offset:	move.b	(a0)+,d1	; offset
-	addq.b	#3,d0		; size
+	;; d0 => 0..191
+offset:
+	move.b	(a0)+,d1
+	addq.b	#3,d0
+	
 
 offlp:	move.b	(a1,d1.w),(a1)+
 	subq.b	#1,d0
